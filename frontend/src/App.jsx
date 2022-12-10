@@ -25,6 +25,8 @@ import { useEffect, useRef, useState } from "react";
 import plapadu from "/plapadu.mp3";
 import bamborak from "/bamborak.mp3";
 
+import { url } from "./config.js";
+
 function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -43,17 +45,20 @@ function App() {
     if (ID === "") {
       setOpen(true);
       setError("Dyrbiš sebi rěčnika wuzwolić!");
-      console.log(open);
       return;
     }
     if (text === "") {
       setOpen(true);
       setError("Dyrbiš tekst zapodać!");
-      console.log(open);
+      return;
+    }
+    if (text.length > 700) {
+      setOpen(true);
+      setError("Zapodaj tekst z < 700 znamješkami!");
       return;
     }
     setIsLoading(true);
-    fetch("http://localhost:8080/api/tts", {
+    fetch(`${url}/api/tts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -86,7 +91,7 @@ function App() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/fetch_speakers").then((response) =>
+    fetch(`${url}/api/fetch_speakers`).then((response) =>
       response.json().then((data) => {
         setSpeakers(data);
       })

@@ -27,7 +27,9 @@ synthesizers = {
 
 }
 
-MODEL_DIR = "./models"
+MODEL_DIR = "models"
+
+LIMIT_CHARS = True
 
 for speaker in list(speaker_config.items()):
     synthesizers[speaker[0]] = Synthesizer(
@@ -97,6 +99,9 @@ def main():
 
     text = request.json["text"]
 
+    if len(text) > 700 and LIMIT_CHARS:
+        return jsonify("twój tekst je dlěši hač 700 znamješkow")
+
     if text[-1] == "." or text[-1] == "," or text[-1] == "!":
         pass
     else:
@@ -138,4 +143,4 @@ def main():
 
 if __name__ == "__main__":
     app.run(port=int(os.environ.get('PORT', 8080)),
-            host='0.0.0.0', debug=True)
+            host='0.0.0.0', debug=False)
