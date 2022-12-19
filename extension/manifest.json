@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Bamborak rozšěrjenje",
+  "description": "Z tutom rozšěrjenjom móžeće sebi kóždy tekst, na kóždej stronje předčitać dać.",
+  "version": "1.0",
+  "action": {
+    "default_popup": "./html/config.html"
+  },
+  "background": {
+    "service_worker": "./scripts/background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "contextMenus", "scripting", "activeTab"],
+  "host_permissions": [
+    "https://www.sotra.app/*",
+    "https://sotra.app/*",
+    "https://gaussia.de/*"
+  ]
+}

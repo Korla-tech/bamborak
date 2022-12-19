@@ -15,6 +15,8 @@ import threading
 
 import time
 
+from utils import number_to_text
+
 app = flask.Flask(__name__)
 
 # CORS
@@ -66,9 +68,21 @@ char_to_spoken = {
     "t": "te",
     "u": "u",
     "w": "w",
+    "v": "fau",
+    "x": "iks",
+    "y": "ypsilon",
     "z": "zet",
-    "ž": "žet"
+    "ž": "žet",
+    " ": ""
 }
+
+
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 
 def delete_temp_files(file0, file1):
@@ -77,7 +91,7 @@ def delete_temp_files(file0, file1):
     os.system(f"rm {file1}")
 
 
-@app.route("/api/fetch_speakers", methods=["GET"])
+@app.route("/api/fetch_speakers/", methods=["GET"])
 def fetch_speakers():
     speakers = []
     for speaker in list(speaker_config.items()):
@@ -88,7 +102,7 @@ def fetch_speakers():
     return jsonify(speakers)
 
 
-@app.route("/api/tts", methods=["POST"])
+@app.route("/api/tts/", methods=["POST"])
 def main():
     if "text" not in request.json:
         return jsonify("žadyn tekst")
@@ -108,6 +122,7 @@ def main():
         text = f"{text}."
 
     abbr_start = None
+    num_start = None
 
     for index in range(len(text)):
         char = text[index]
@@ -121,11 +136,16 @@ def main():
                 if len(abbr) > 1:
                     for letter in abbr:
                         written_abbr = f"{written_abbr} {char_to_spoken[letter.lower()]}"
-
                     text = text.replace(
                         abbr, written_abbr.strip())
-
-            abbr_start = None
+        if is_number(char):
+            if num_start is None:
+                num_start = index
+            else:
+                if num_start is not None:
+                    num = text[num_start:index]
+                    text = text.replace(num, number_to_text(num))
+        abbr_start = None
 
     text = text.lower()
 
@@ -143,4 +163,4 @@ def main():
 
 if __name__ == "__main__":
     app.run(port=int(os.environ.get('PORT', 8080)),
-            host='0.0.0.0', debug=False)
+            host='0.0.0.0', debug=True)

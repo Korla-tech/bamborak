@@ -1,3 +1,5 @@
+import math
+
 numberWord0To9 = {
     0: "nul",
     1: "jedyn",
@@ -71,3 +73,156 @@ numberWord1000plus = {
     5e12: "pjeć bilionow",
     "6e12+": "bilionow",
 }
+
+
+def spellNumber0to99(num):
+    if num < 0 and num > 100:
+        raise ValueError("number out of range!")
+
+    if num < 10:
+        return numberWord0To9[num]
+    elif num >= 10 and num < 20:
+        return numberWord10To19[num]
+    elif num >= 20 and num < 100:
+        num1 = math.floor(num / 10)
+        num2 = num % 10
+        if num2 == 0:
+            return numberWord20To90[num1]
+        else:
+            return f"{numberWord0To9[num2]}a{numberWord20To90[num1]}"
+
+
+def spellNumber100to999(num):
+    if num < 100 and num > 1000:
+        raise ValueError("number out of range!")
+
+    num1 = math.floor(num / 100)
+    num2 = num % 100
+
+    if num2 == 0:
+        return f"{numberWord100To900[num1]}"
+    else:
+        return f"{numberWord100To900[num1]}{spellNumber0to99(num2)}"
+
+
+def spellNumber0to999(num):
+
+    if num >= 0 and num < 100:
+        return spellNumber0to99(num)
+    elif num >= 100 and num < 1000:
+        return spellNumber100to999(num)
+    return ValueError("number out of range!")
+
+
+def spellNumber1000to999999(num):
+
+    texts = []
+
+    num1 = math.floor(num / 1e3)
+    num2 = num % 1e3
+
+    if num1 > 0:
+        if num != 1:
+            texts.append(spellNumber0to999(num1))
+        texts.append(numberWord1000plus[1e3])
+    if num2 > 0:
+        texts.append(spellNumber0to999(num2))
+    return "".join(texts)
+
+
+def spellNumberMil(num):
+    texts = []
+    num1 = math.floor(num / 1e6)
+    num2 = num % 1e6
+
+    if num1 > 0:
+        if num1 == 1:
+            texts.append(numberWord1000plus[1e6])
+        elif num1 == 2:
+            texts.append(numberWord1000plus[2e6])
+        elif num1 == 3:
+            texts.append(numberWord1000plus[3e6])
+        elif num1 == 4:
+            texts.append(numberWord1000plus[4e6])
+        elif num1 == 5:
+            texts.append(numberWord1000plus[5e6])
+        else:
+            texts.append(spellNumber0to999(num1))
+            texts.append(numberWord1000plus["6e6+"])
+
+    if num2 > 0:
+        texts.append(spellNumber1000to999999(num2))
+    return "".join(texts)
+
+
+def spellNumberMrd(num):
+    texts = []
+    num1 = math.floor(num / 1e9)
+    num2 = num % 1e9
+
+    if num1 > 0:
+        if num1 == 1:
+            texts.append(numberWord1000plus[1e9])
+        elif num1 == 2:
+            texts.append(numberWord1000plus[2e9])
+        elif num1 == 3:
+            texts.append(numberWord1000plus[3e9])
+        elif num1 == 4:
+            texts.append(numberWord1000plus[4e9])
+        elif num1 == 5:
+            texts.append(numberWord1000plus[5e9])
+        else:
+            texts.append(spellNumber0to999(num1))
+            texts.append(numberWord1000plus["6e9+"])
+
+    if num2 > 0:
+        texts.append(spellNumberMil(num2))
+    return "".join(texts)
+
+
+def spellNumberBil(num):
+    texts = []
+    num1 = math.floor(num / 1e12)
+    num2 = num % 1e12
+
+    if num1 > 0:
+        if num1 == 1:
+            texts.append(numberWord1000plus[1e12])
+        elif num1 == 2:
+            texts.append(numberWord1000plus[2e12])
+        elif num1 == 3:
+            texts.append(numberWord1000plus[3e12])
+        elif num1 == 4:
+            texts.append(numberWord1000plus[4e12])
+        elif num1 == 5:
+            texts.append(numberWord1000plus[5e12])
+        else:
+            texts.append(spellNumber0to999(num1))
+            texts.append(numberWord1000plus["6e12+"])
+
+    if num2 > 0:
+        texts.append(spellNumberMrd(num2))
+    return "".join(texts)
+
+
+def number_to_text(num):
+
+    try:
+        int(num)
+    except ValueError:
+        raise ValueError("not a number!")
+
+    num = int(num)
+
+    if num >= 0 and num < 1000:
+        return spellNumber0to999(num)
+    elif num >= 1e3 and num < 1e6:
+        return spellNumber1000to999999(num)
+    elif num >= 1e6 and num < 1e9:
+        return spellNumberMil(num)
+    elif num >= 1e9 and num < 1e12:
+        return spellNumberMrd(num)
+    elif num >= 1e12 and num < 1e15:
+        return spellNumberBil(num)
+    else:
+        raise ValueError("number out of range!")

@@ -25,7 +25,7 @@ import { useEffect, useRef, useState } from "react";
 import plapadu from "/plapadu.mp3";
 import bamborak from "/bamborak.mp3";
 
-import { url } from "./config.js";
+import { realtime_factor, url } from "./config.js";
 
 function App() {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +36,8 @@ function App() {
   const [ID, setID] = useState("");
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState(0);
 
   const audio = useRef();
 
@@ -58,6 +60,19 @@ function App() {
       return;
     }
     setIsLoading(true);
+    setProgress(0);
+    setOpen(false);
+    setEstimatedTime(((text.length / 11) * realtime_factor).toFixed());
+    let estimated_time = ((text.length / 11) * realtime_factor).toFixed();
+    console.log("e" + estimatedTime);
+    let elapsed_time = 0;
+    let interval = setInterval(() => {
+      elapsed_time++;
+      setProgress((elapsed_time / estimated_time) * 100);
+      console.log((elapsed_time / estimated_time) * 100);
+      console.log(elapsed_time);
+      console.log("e" + estimated_time);
+    }, 1000);
     fetch(`${url}/api/tts/`, {
       method: "POST",
       headers: {
@@ -86,6 +101,7 @@ function App() {
         setIsLoading(false);
         setIsLoaded(true);
         setIsPlaying(true);
+        clearInterval(interval);
       });
     });
   };
@@ -93,6 +109,7 @@ function App() {
   useEffect(() => {
     fetch(`${url}/api/fetch_speakers/`).then((response) =>
       response.json().then((data) => {
+        setID(Object.values(data)[0].id);
         setSpeakers(data);
       })
     );
@@ -102,7 +119,7 @@ function App() {
     <CssVarsProvider>
       <Box
         sx={{
-          width: "100vw",
+          width: "100%",
           display: "flex",
           justifyContent: "center",
         }}
@@ -120,7 +137,9 @@ function App() {
           <Typography level="display1" textAlign={"center"}>
             bamborak
           </Typography>
-          <Typography level="h5" textAlign={"center"}>TTS-system za hornjoserbšćinu</Typography>
+          <Typography level="h5" textAlign={"center"}>
+            TTS-system za hornjoserbšćinu
+          </Typography>
           <Select
             color="primary"
             placeholder="wuzwol sebi hłós"
@@ -155,11 +174,18 @@ function App() {
             variant="soft"
             onClickCapture={synthesize}
             startDecorator={
-              isLoading ? <CircularProgress variant="soft" /> : <VolumeUp />
+              isLoading ? (
+                <CircularProgress variant="soft" determinate value={progress} />
+              ) : (
+                <VolumeUp />
+              )
             }
           >
             tekst sebi naposkać
           </Button>
+          {isLoading ? (
+            <Typography>trochowany čas: {estimatedTime}s</Typography>
+          ) : null}
           {isLoaded ? (
             <Sheet
               color="primary"
@@ -175,7 +201,7 @@ function App() {
               }}
             >
               <Button
-				title="pause/continue"
+                title="pause/continue"
                 onClick={() => {
                   setIsPlaying(!isPlaying);
                   if (isPlaying) {
@@ -188,7 +214,7 @@ function App() {
                 {isPlaying ? <Pause /> : <PlayArrow />}
               </Button>
               <Button
-				title="replay"
+                title="replay"
                 onClick={() => {
                   audio.current.currentTime = 0;
                   audio.current.play();
@@ -198,7 +224,7 @@ function App() {
                 <ReplayOutlined />
               </Button>
               <Button
-				title="download"
+                title="download"
                 onClick={() => {
                   var a = document.createElement("a");
                   document.body.appendChild(a);
@@ -226,25 +252,30 @@ function App() {
           ) : null}
           <Typography level="h2">Što je bamborak?</Typography>
           <Typography>
-            Bamborak je TTS-system za hornjoserbšćinu. TTS je jendźelsce a stej za tekst k rěči.
-			Bamborak je TTS-system na basy neuronalneje syće.
-			Z neuronalnej syću móže bamborak přirodnu syntezu stworić.
+            Bamborak je TTS-system za hornjoserbšćinu. TTS je jendźelsce a stej
+            za tekst k rěči. Bamborak je TTS-system na basy neuronalneje syće. Z
+            neuronalnej syću móže bamborak přirodnu syntezu stworić.
           </Typography>
           <Typography level="h2">
             Kak móžu bamborak za swójske projekty wužiwać?
           </Typography>
           <Typography>
-            Namakaće projekt bamborak tež na <a href="https://github.com/Korla-tech/bamborak">Github</a>. Tam so potom
-            wšitko dalše wopisuje.
+            Namakaće projekt bamborak tež na{" "}
+            <a href="https://github.com/Korla-tech/bamborak">Github</a>. Tam so
+            potom wšitko dalše wopisuje.
           </Typography>
           <Typography level="h2">Čehodla sym bamborak stworił?</Typography>
           <Typography>
             Před bamborakom dawaše jenož jedyn TTS-system za hornjoserbšćinu. -
-			To bě plapadu wot prof. Edwarda Wornarja. System běži pak jenož na Apple-ličakach a dyrbi so najprjedy instalować.
-			Tohodla sym swójski system stworił. Tež hdyž bu dotal jenož z 2500 hornjoserbskimi sadami trenowany ma so kwalita přichodnje hišće polěpšić - poskajće raz sami  (<a href="#test_sentence">testowa sadźba</a>):
+            To bě plapadu wot prof. Edwarda Wornarja. System běži pak jenož na
+            Apple-ličakach a dyrbi so najprjedy instalować. Tohodla sym swójski
+            system stworił. Tež hdyž bu dotal jenož z 2500 hornjoserbskimi
+            sadami trenowany ma so kwalita přichodnje hišće polěpšić - poskajće
+            raz sami (<a href="#test_sentence">testowa sada</a>):
           </Typography>
           <Typography>
-            <a href="https://github.com/firedemon/plapadu">Plapadu</a> - Prof. Dr. Eduard Werner (institut za sorabistiku):
+            <a href="https://github.com/firedemon/plapadu">Plapadu</a> - Prof.
+            Dr. Eduard Werner (institut za sorabistiku):
           </Typography>
           <audio controls>
             <source src={plapadu} />
@@ -255,21 +286,41 @@ function App() {
           </audio>
           <Typography level="h2">Kak funguje bamborak?</Typography>
           <Typography>
-            Bamborak funguje na basy neuronalneje syće.
-			To rěka, zo sym dyrbjał tysacore sady nahrawać. Z tutymi sadami sym potom model picował.
-			Na kóncu maš potom model z kotrymž móžeš sebi kóždu serbsku sadu předčitać dać - a to potom tež zrozumić.
+            Bamborak funguje na basy neuronalneje syće. To rěka, zo sym dyrbjał
+            tysacore sady nahrawać. Z tutymi sadami sym potom model picował. Na
+            kóncu maš potom model z kotrymž móžeš sebi kóždu serbsku sadu
+            předčitać dać - a to potom tež zrozumić.
           </Typography>
-          <Typography level="h2">Dalše informacije:</Typography>
           <Typography>
-            rěčnik - Korla Baier; trening - Korla Baier; techniske přesadźenje -
-            Korla Baier
+            ✉️{" "}
+            <a
+              title="přez mejlowy program"
+              href="mailto:bamborak@gaussia.de?subject=M%C3%B3j%20feedback%20za%20bamboraka"
+            >
+              kontakt/feedback
+            </a>
           </Typography>
-<Typography>✉️ <a title="přez mejlowy program" href="mailto:bamborak@gaussia.de?subject=M%C3%B3j%20feedback%20za%20bamboraka">kontakt/feedback</a></Typography>
-<hr></hr>
-<Typography>testowa sadźba:</Typography>
-<Typography variant="caption" display="block" gutterBottom id="test_sentence">
-<i>Gmejna Pančicy-Kukow a Domowina chcetej w Muzej Ćišinskeho, kotryž je w Pančičansko-Kukowskej šuli zaměstnjeny, ponowić a zno­wa wuhotować. Wčera su sej wjesnjanosta Markus Kreuz (CDU) a zastupnicy Domowiny – přitomni běchu županka Kamjenskeje župy „Michał Hórnik“ Diana Wowčerjowa, předsyda Pančičansko-Kukowskeje Domowinskeje skupiny Pětr Korjeńk, projektna wobdźěłarka Trudla Kuringowa, regionalna rěčnica Domowiny za Kamjenski region Katharina Jurkowa a referent Domowiny za kulturu a wukraj Clemens Škoda – trěbne podpisane zrěčenje wuměnili. Wo tym informuje medijowy rěčnik třěšneho zwjazka Marcel Brauman.
-</i></Typography>
+          <hr></hr>
+          <Typography>testowa sada:</Typography>
+          <Typography
+            variant="caption"
+            display="block"
+            gutterBottom
+            id="test_sentence"
+          >
+            <i>
+              Gmejna Pančicy-Kukow a Domowina chcetej w Muzej Ćišinskeho, kotryž
+              je w Pančičansko-Kukowskej šuli zaměstnjeny, ponowić a zno­wa
+              wuhotować. Wčera su sej wjesnjanosta Markus Kreuz (CDU) a
+              zastupnicy Domowiny – přitomni běchu županka Kamjenskeje župy
+              „Michał Hórnik“ Diana Wowčerjowa, předsyda Pančičansko-Kukowskeje
+              Domowinskeje skupiny Pětr Korjeńk, projektna wobdźěłarka Trudla
+              Kuringowa, regionalna rěčnica Domowiny za Kamjenski region
+              Katharina Jurkowa a referent Domowiny za kulturu a wukraj Clemens
+              Škoda – trěbne podpisane zrěčenje wuměnili. Wo tym informuje
+              medijowy rěčnik třěšneho zwjazka Marcel Brauman.
+            </i>
+          </Typography>
         </Stack>
       </Box>
     </CssVarsProvider>
