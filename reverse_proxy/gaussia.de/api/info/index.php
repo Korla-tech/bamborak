@@ -12,7 +12,7 @@ if (!$logging) {
     $port      = 8080;
 }
 
-$rel_path = "/api/tts/";
+$rel_path = "/api/info/";
 
 include '../proxy.php';
 

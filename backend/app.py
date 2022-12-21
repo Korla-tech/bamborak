@@ -25,13 +25,17 @@ CORS(app)
 with open("./config.json") as f:
     speaker_config = json.load(f)
 
+
 synthesizers = {
 
 }
 
 MODEL_DIR = "models"
 
-LIMIT_CHARS = True
+with open(f"./{MODEL_DIR}/info.json") as f:
+    models = json.load(f)
+
+LIMIT_CHARS = 700
 
 for speaker in list(speaker_config.items()):
     synthesizers[speaker[0]] = Synthesizer(
@@ -91,6 +95,12 @@ def delete_temp_files(file0, file1):
     os.system(f"rm {file1}")
 
 
+@app.route("/api/info/", methods=["GET"])
+def info():
+    res = {'version': '0.0.1a', 'model': models}
+    return res
+
+
 @app.route("/api/fetch_speakers/", methods=["GET"])
 def fetch_speakers():
     speakers = []
@@ -102,65 +112,115 @@ def fetch_speakers():
     return jsonify(speakers)
 
 
+def err_msg(msg):
+    return {"errmsg": msg}
+
+
 @app.route("/api/tts/", methods=["POST"])
 def main():
-    if "text" not in request.json:
-        return jsonify("žadyn tekst")
-    if "speaker_id" not in request.json:
-        return jsonify("žadyn rěćnik")
-    if request.json["speaker_id"] not in speaker_config:
-        return jsonify("wopačna speaker_id")
+    try:
+        if "text" not in request.json:
+            return err_msg("missing text")
+        if "speaker_id" not in request.json:
+            return err_msg("missing speaker_id")
+        if request.json["speaker_id"] not in speaker_config:
+            return err_msg("invalid speaker_id")
 
-    text = request.json["text"]
+        text = request.json["text"]
 
-    if len(text) > 700 and LIMIT_CHARS:
-        return jsonify("twój tekst je dlěši hač 700 znamješkow")
+        print(f"input text: {text}")
 
-    if text[-1] == "." or text[-1] == "," or text[-1] == "!":
-        pass
-    else:
-        text = f"{text}."
+        if LIMIT_CHARS > 0 and len(text) > LIMIT_CHARS:
+            return err_msg(f"input text too long (max {LIMIT_CHARS} characters)")
 
-    abbr_start = None
-    num_start = None
-
-    for index in range(len(text)):
-        char = text[index]
-        if char.isupper():
-            if abbr_start is None:
-                abbr_start = index
+        if text[-1] == "." or text[-1] == "," or text[-1] == "!":
+            pass
         else:
-            if abbr_start is not None:
-                written_abbr = ""
-                abbr = text[abbr_start:index]
-                if len(abbr) > 1:
-                    for letter in abbr:
-                        written_abbr = f"{written_abbr} {char_to_spoken[letter.lower()]}"
-                    text = text.replace(
-                        abbr, written_abbr.strip())
-        if is_number(char):
-            if num_start is None:
-                num_start = index
-            else:
-                if num_start is not None:
-                    num = text[num_start:index]
-                    text = text.replace(num, number_to_text(num))
+            text = f"{text}."
+
         abbr_start = None
+        num_start = None
+        res_text = ""
+        curstate = "char"
+        laststate = ""
+        for index in range(len(text)):
 
-    text = text.lower()
+            char = text[index]
+            #print(f".. {index} {char}")
+            if char.isupper():
+                if abbr_start is None:
+                    abbr_start = index
+                    curstate = "abbr"
+                    #print(f"starting abbreviation at {index}")
+            elif is_number(char):
+                if num_start is None:
+                    num_start = index
+                    curstate = "num"
+                    #print(f"starting number at {index}")
+            else:
+                curstate = "char"
+            #print(f"{laststate} -> {curstate}")
 
-    wav = synthesizers[request.json["speaker_id"]].tts(text)
-    temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
-    temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
-    synthesizers[request.json["speaker_id"]].save_wav(wav, temp_wav_file_path)
-    os.system(
-        f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}")
-    delete_temp_file_thread = threading.Thread(
-        target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
-    delete_temp_file_thread.start()
-    return send_file(temp_mp3_file_path)
+            if curstate != laststate:
+                if laststate == "abbr":
+                    written_abbr = ""
+                    abbr = text[abbr_start:index]
+                    #print(f"found abbreviation {abbr}")
+                    if len(abbr) > 1:
+                        for letter in abbr:
+                            written_abbr = f"{written_abbr} {char_to_spoken[letter.lower()]}"
+                        res_text = res_text + ' '+written_abbr+' '
+                    else:
+                        res_text = res_text + abbr
+                    abbr_start = None
+                elif laststate == "num":
+                    num = text[num_start:index]
+                    #print(f"found number {num}")
+                    res_text = res_text + ' '+number_to_text(num)+' '
+                    num_start = None
+
+            if curstate == "char":
+                res_text = res_text + char
+            #print(f"res_text: {res_text}")
+
+            laststate = curstate
+
+        res_text = res_text.lower()
+        res_text = res_text.replace("  ", " ")
+        print(f"Final text: {res_text}")
+        wav = synthesizers[request.json["speaker_id"]].tts(res_text)
+        temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
+        temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
+        synthesizers[request.json["speaker_id"]
+                     ].save_wav(wav, temp_wav_file_path)
+        os.system(
+            f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}")
+        delete_temp_file_thread = threading.Thread(
+            target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
+        delete_temp_file_thread.start()
+        return send_file(temp_mp3_file_path)
+
+    except Exception as ex:
+        trace = []
+        tb = ex.__traceback__
+        while tb is not None:
+            trace.append({
+                "filename": tb.tb_frame.f_code.co_filename,
+                "name": tb.tb_frame.f_code.co_name,
+                "lineno": tb.tb_lineno
+            })
+            tb = tb.tb_next
+        ret = {
+            'errmsg': "Exception",
+            'exception': {'type': type(ex).__name__,
+                          'message': str(ex),
+                          'trace': trace}
+        }
+        print(str(ret))
+        return ret
 
 
 if __name__ == "__main__":
+    print("starting webserver ...")
     app.run(port=int(os.environ.get('PORT', 8080)),
-            host='0.0.0.0', debug=True)
+            host='0.0.0.0', debug=False)

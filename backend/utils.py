@@ -89,7 +89,7 @@ def spellNumber0to99(num):
         if num2 == 0:
             return numberWord20To90[num1]
         else:
-            return f"{numberWord0To9[num2]}a{numberWord20To90[num1]}"
+            return f"{numberWord0To9[num2]} a {numberWord20To90[num1]}"
 
 
 def spellNumber100to999(num):
@@ -102,7 +102,7 @@ def spellNumber100to999(num):
     if num2 == 0:
         return f"{numberWord100To900[num1]}"
     else:
-        return f"{numberWord100To900[num1]}{spellNumber0to99(num2)}"
+        return f"{numberWord100To900[num1]} {spellNumber0to99(num2)}"
 
 
 def spellNumber0to999(num):
@@ -127,7 +127,7 @@ def spellNumber1000to999999(num):
         texts.append(numberWord1000plus[1e3])
     if num2 > 0:
         texts.append(spellNumber0to999(num2))
-    return "".join(texts)
+    return " ".join(texts)
 
 
 def spellNumberMil(num):
@@ -152,7 +152,7 @@ def spellNumberMil(num):
 
     if num2 > 0:
         texts.append(spellNumber1000to999999(num2))
-    return "".join(texts)
+    return " ".join(texts)
 
 
 def spellNumberMrd(num):
@@ -177,7 +177,7 @@ def spellNumberMrd(num):
 
     if num2 > 0:
         texts.append(spellNumberMil(num2))
-    return "".join(texts)
+    return " ".join(texts)
 
 
 def spellNumberBil(num):
@@ -202,7 +202,7 @@ def spellNumberBil(num):
 
     if num2 > 0:
         texts.append(spellNumberMrd(num2))
-    return "".join(texts)
+    return " ".join(texts)
 
 
 def number_to_text(num):

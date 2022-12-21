@@ -12,7 +12,7 @@ if (!$logging) {
     $port      = 8080;
 }
 
-$rel_path = "/api/fetch_speakers";
+$rel_path = "/api/fetch_speakers/";
 
 include '../proxy.php';
 
