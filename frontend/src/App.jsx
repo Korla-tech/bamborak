@@ -28,7 +28,7 @@ import Textarea from "@mui/joy/Textarea";
 import { Stack } from "@mui/system";
 import { useEffect, useRef, useState } from "react";
 
-import { realtime_factor, url } from "./config.js";
+import { realtime_factor, url, max_textlen } from "./config.js";
 
 function App() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,9 +59,9 @@ function App() {
       setError("Dyrbiš tekst zapodać!");
       return;
     }
-    if (text.length > 700) {
+    if (text.length > max_textlen) {
       setOpen(true);
-      setError("Zapodaj tekst z < 700 znamješkami!");
+      setError("Zapodaj tekst z <= "+max_textlen+" znamješkami!");
       return;
     }
     setIsLoading(true);
@@ -69,14 +69,12 @@ function App() {
     setOpen(false);
     setEstimatedTime(((text.length / 11) * realtime_factor).toFixed());
     let estimated_time = ((text.length / 11) * realtime_factor).toFixed();
-    console.log("e" + estimatedTime);
+    console.log("est.time: " + estimatedTime);
     let elapsed_time = 0;
     let interval = setInterval(() => {
       elapsed_time++;
       setProgress((elapsed_time / estimated_time) * 100);
-      console.log((elapsed_time / estimated_time) * 100);
-      console.log(elapsed_time);
-      console.log("e" + estimated_time);
+      console.log("el.time vs. est.time: " + elapsed_time + " / "+estimated_time +" = "+ ((elapsed_time / estimated_time) * 100)+"%");
     }, 1000);
     fetch(`${url}/api/tts/`, {
       method: "POST",
@@ -89,24 +87,27 @@ function App() {
       }),
     }).then((response) => {
       response.blob().then((blob) => {
+        console.log("result blob ("+blob.type+"): ");
         console.log(blob);
-        if (blob.type == "application/json") {
+        clearInterval(interval);
+        setIsLoading(false);
+        if (blob.type == "application/json") { // Dann ist es ein Fehlerobject .....
           var myReader = new FileReader();
           myReader.onload = function (event) {
             setOpen(true);
-            setError(JSON.stringify(myReader.result));
-            console.log(JSON.stringify(myReader.result));
+            //setError(JSON.stringify(myReader.result));
+            setError(""+myReader.result);
+            console.log("error: "+myReader.result);
           };
           myReader.readAsText(blob);
+        } else {
+          audio_blob.current = blob;
+          let blobUrl = URL.createObjectURL(blob);
+          audio.current = new Audio(blobUrl);
+          audio.current.play();
+          setIsLoaded(true);
+          setIsPlaying(true);
         }
-        audio_blob.current = blob;
-        let blobUrl = URL.createObjectURL(blob);
-        audio.current = new Audio(blobUrl);
-        audio.current.play();
-        setIsLoading(false);
-        setIsLoaded(true);
-        setIsPlaying(true);
-        clearInterval(interval);
       });
     });
   };
