@@ -1,5 +1,6 @@
 import {
   Download,
+  Info,
   Pause,
   PlayArrow,
   ReplayOutlined,
@@ -11,19 +12,21 @@ import {
   Box,
   Button,
   CircularProgress,
+  CssBaseline,
+  IconButton,
+  Modal,
+  ModalClose,
+  ModalDialog,
   Option,
   Select,
   Sheet,
+  Tooltip,
   Typography,
 } from "@mui/joy";
-import { CssVarsProvider } from "@mui/joy/styles";
 
 import Textarea from "@mui/joy/Textarea";
 import { Stack } from "@mui/system";
 import { useEffect, useRef, useState } from "react";
-
-import plapadu from "/plapadu.mp3";
-import bamborak from "/bamborak.mp3";
 
 import { realtime_factor, url } from "./config.js";
 
@@ -38,6 +41,8 @@ function App() {
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState(0);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [infoText, setInfoText] = useState("");
 
   const audio = useRef();
 
@@ -110,43 +115,56 @@ function App() {
     fetch(`${url}/api/fetch_speakers/`).then((response) =>
       response.json().then((data) => {
         setID(Object.values(data)[0].id);
+        setInfoText(Object.values(data)[0].info);
         setSpeakers(data);
       })
     );
   }, []);
 
   return (
-    <CssVarsProvider>
-      <Box
+    <Box
+      sx={{
+        width: "100%",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <Stack
+        spacing={2}
         sx={{
-          width: "100%",
+          maxWidth: "500px",
           display: "flex",
           justifyContent: "center",
+          width: "100%",
+          flexDirection: "column",
         }}
       >
-        <Stack
-          spacing={2}
+        <Typography level="display1" textAlign={"center"}>
+          bamborak
+        </Typography>
+        <Typography level="h5" textAlign={"center"}>
+          TTS-system za hornjoserbšćinu
+        </Typography>
+        <Box
           sx={{
-            maxWidth: "500px",
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "row",
             width: "100%",
-            flexDirection: "column",
           }}
         >
-          <Typography level="display1" textAlign={"center"}>
-            bamborak
-          </Typography>
-          <Typography level="h5" textAlign={"center"}>
-            TTS-system za hornjoserbšćinu
-          </Typography>
           <Select
             color="primary"
             placeholder="wuzwol sebi hłós"
             variant="soft"
+            sx={{ flex: 1 }}
             value={ID}
             onChange={(e, values) => {
               setID(values);
+              speakers.map((speaker) => {
+                if (speaker.id === values) {
+                  setInfoText(speaker.info);
+                }
+              });
             }}
           >
             {speakers.map((speaker) => {
@@ -157,173 +175,152 @@ function App() {
               );
             })}
           </Select>
-          <Textarea
-            color="primary"
-            minRows={3}
-            placeholder="zapisaj tu twój tekst"
-            size="lg"
-            variant="soft"
-            sx={{ width: "100%" }}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-            }}
-          />
-          <Button
-            onClick={null}
-            variant="soft"
-            onClickCapture={synthesize}
-            startDecorator={
-              isLoading ? (
-                <CircularProgress variant="soft" determinate value={progress} />
-              ) : (
-                <VolumeUp />
-              )
-            }
-          >
-            tekst sebi naposkać
-          </Button>
-          {isLoading ? (
-            <Typography>trochowany čas: {estimatedTime}s</Typography>
-          ) : null}
-          {isLoaded ? (
-            <Sheet
-              color="primary"
-              variant="soft"
-              sx={{
-                height: "50px",
-                padding: "5px",
-                borderRadius: "20px",
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-                alignItems: "center",
+          <Tooltip title={"informacije k rěčnikej"} sx={{ ml: 1 }}>
+            <IconButton
+              onClick={() => {
+                setInfoOpen(true);
               }}
             >
-              <Button
-                title="pause/continue"
-                onClick={() => {
-                  setIsPlaying(!isPlaying);
-                  if (isPlaying) {
-                    audio.current.pause();
-                  } else {
-                    audio.current.play();
-                  }
-                }}
-              >
-                {isPlaying ? <Pause /> : <PlayArrow />}
-              </Button>
-              <Button
-                title="replay"
-                onClick={() => {
-                  audio.current.currentTime = 0;
-                  audio.current.play();
-                  setIsPlaying(true);
-                }}
-              >
-                <ReplayOutlined />
-              </Button>
-              <Button
-                title="download"
-                onClick={() => {
-                  var a = document.createElement("a");
-                  document.body.appendChild(a);
-                  a.style = "display: none";
-                  let url = window.URL.createObjectURL(audio_blob.current);
-                  a.href = url;
-                  a.download = "bamborak.mp3";
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                }}
-              >
-                <Download />
-              </Button>
-            </Sheet>
-          ) : null}
-          {open ? (
-            <Alert
-              color="danger"
-              size="lg"
-              variant="soft"
-              startDecorator={<Warning />}
-            >
-              {error}
-            </Alert>
-          ) : null}
-          <Typography level="h2">Što je bamborak?</Typography>
-          <Typography>
-            Bamborak je TTS-system za hornjoserbšćinu. TTS je jendźelsce a stej
-            za tekst k rěči. Bamborak je TTS-system na basy neuronalneje syće. Z
-            neuronalnej syću móže bamborak přirodnu syntezu stworić.
-          </Typography>
-          <Typography level="h2">
-            Kak móžu bamborak za swójske projekty wužiwać?
-          </Typography>
-          <Typography>
-            Namakaće projekt bamborak tež na{" "}
-            <a href="https://github.com/Korla-tech/bamborak">Github</a>. Tam so
-            potom wšitko dalše wopisuje.
-          </Typography>
-          <Typography level="h2">Čehodla sym bamborak stworił?</Typography>
-          <Typography>
-            Před bamborakom dawaše jenož jedyn TTS-system za hornjoserbšćinu. -
-            To bě plapadu wot prof. Edwarda Wornarja. System běži pak jenož na
-            Apple-ličakach a dyrbi so najprjedy instalować. Tohodla sym swójski
-            system stworił. Tež hdyž bu dotal jenož z 2500 hornjoserbskimi
-            sadami trenowany ma so kwalita přichodnje hišće polěpšić - poskajće
-            raz sami (<a href="#test_sentence">testowa sada</a>):
-          </Typography>
-          <Typography>
-            <a href="https://github.com/firedemon/plapadu">Plapadu</a> - Prof.
-            Dr. Eduard Werner (institut za sorabistiku):
-          </Typography>
-          <audio controls>
-            <source src={plapadu} />
-          </audio>
-          <Typography>Bamborak - Korla Baier:</Typography>
-          <audio controls>
-            <source src={bamborak} />
-          </audio>
-          <Typography level="h2">Kak funguje bamborak?</Typography>
-          <Typography>
-            Bamborak funguje na basy neuronalneje syće. To rěka, zo sym dyrbjał
-            tysacore sady nahrawać. Z tutymi sadami sym potom model picował. Na
-            kóncu maš potom model z kotrymž móžeš sebi kóždu serbsku sadu
-            předčitać dać - a to potom tež zrozumić.
-          </Typography>
-          <Typography>
-            ✉️{" "}
-            <a
-              title="přez mejlowy program"
-              href="mailto:bamborak@gaussia.de?subject=M%C3%B3j%20feedback%20za%20bamboraka"
-            >
-              kontakt/feedback
-            </a>
-          </Typography>
-          <hr></hr>
-          <Typography>testowa sada:</Typography>
-          <Typography
-            variant="caption"
-            display="block"
-            gutterBottom
-            id="test_sentence"
+              <Info />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Modal open={infoOpen}>
+          <ModalDialog color="primary" layout="center" size="sm" variant="soft">
+            <ModalClose
+              onClick={() => {
+                setInfoOpen(false);
+              }}
+            />
+            <Typography level="h5">Informacije k modelej</Typography>
+            <Typography>{infoText}</Typography>
+          </ModalDialog>
+        </Modal>
+        <Textarea
+          color="primary"
+          minRows={3}
+          placeholder="zapisaj tu twój tekst"
+          size="lg"
+          variant="soft"
+          sx={{ width: "100%" }}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+        />
+        <Button
+          onClick={null}
+          variant="soft"
+          onClickCapture={synthesize}
+          startDecorator={
+            isLoading ? (
+              <CircularProgress variant="soft" determinate value={progress} />
+            ) : (
+              <VolumeUp />
+            )
+          }
+        >
+          tekst sebi naposkać
+        </Button>
+        {isLoading ? (
+          <Typography>trochowany čas: {estimatedTime}s</Typography>
+        ) : null}
+        {isLoaded ? (
+          <Sheet
+            color="primary"
+            variant="soft"
+            sx={{
+              height: "50px",
+              padding: "5px",
+              borderRadius: "20px",
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-evenly",
+              alignItems: "center",
+            }}
           >
-            <i>
-              Gmejna Pančicy-Kukow a Domowina chcetej w Muzej Ćišinskeho, kotryž
-              je w Pančičansko-Kukowskej šuli zaměstnjeny, ponowić a zno­wa
-              wuhotować. Wčera su sej wjesnjanosta Markus Kreuz (CDU) a
-              zastupnicy Domowiny – přitomni běchu županka Kamjenskeje župy
-              „Michał Hórnik“ Diana Wowčerjowa, předsyda Pančičansko-Kukowskeje
-              Domowinskeje skupiny Pětr Korjeńk, projektna wobdźěłarka Trudla
-              Kuringowa, regionalna rěčnica Domowiny za Kamjenski region
-              Katharina Jurkowa a referent Domowiny za kulturu a wukraj Clemens
-              Škoda – trěbne podpisane zrěčenje wuměnili. Wo tym informuje
-              medijowy rěčnik třěšneho zwjazka Marcel Brauman.
-            </i>
-          </Typography>
-        </Stack>
-      </Box>
-    </CssVarsProvider>
+            <Button
+              title="pause/continue"
+              onClick={() => {
+                setIsPlaying(!isPlaying);
+                if (isPlaying) {
+                  audio.current.pause();
+                } else {
+                  audio.current.play();
+                }
+              }}
+            >
+              {isPlaying ? <Pause /> : <PlayArrow />}
+            </Button>
+            <Button
+              title="replay"
+              onClick={() => {
+                audio.current.currentTime = 0;
+                audio.current.play();
+                setIsPlaying(true);
+              }}
+            >
+              <ReplayOutlined />
+            </Button>
+            <Button
+              title="download"
+              onClick={() => {
+                var a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display: none";
+                let url = window.URL.createObjectURL(audio_blob.current);
+                a.href = url;
+                a.download = "bamborak.mp3";
+                a.click();
+                window.URL.revokeObjectURL(url);
+              }}
+            >
+              <Download />
+            </Button>
+          </Sheet>
+        ) : null}
+        {open ? (
+          <Alert
+            color="danger"
+            size="lg"
+            variant="soft"
+            startDecorator={<Warning />}
+          >
+            {error}
+          </Alert>
+        ) : null}
+        <Typography level="h2">Što je bamborak?</Typography>
+        <Typography>
+          Bamborak je TTS-system za hornjoserbšćinu. TTS je jendźelsce a stej za
+          tekst k rěči. Bamborak je TTS-system na basy neuronalneje syće. Z
+          neuronalnej syću móže bamborak přirodnu syntezu stworić.
+        </Typography>
+        <Typography level="h2">
+          Kak móžu bamborak za swójske projekty wužiwać?
+        </Typography>
+        <Typography>
+          Namakaće projekt bamborak tež na{" "}
+          <a href="https://github.com/Korla-tech/bamborak">Github</a>. Tam so
+          potom wšitko dalše wopisuje.
+        </Typography>
+        <Typography level="h2">Kak funguje bamborak?</Typography>
+        <Typography>
+          Bamborak funguje na basy neuronalneje syće. To rěka, zo sym dyrbjał
+          tysacore sady nahrawać. Z tutymi sadami sym potom model picował. Na
+          kóncu maš potom model z kotrymž móžeš sebi kóždu serbsku sadu
+          předčitać dać - a to potom tež zrozumić.
+        </Typography>
+        <Typography>
+          ✉️{" "}
+          <a
+            title="přez mejlowy program"
+            href="mailto:bamborak@gaussia.de?subject=M%C3%B3j%20feedback%20za%20bamboraka"
+          >
+            kontakt/feedback
+          </a>
+        </Typography>
+      </Stack>
+    </Box>
   );
 }
 

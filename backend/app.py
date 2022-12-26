@@ -32,9 +32,6 @@ synthesizers = {
 
 MODEL_DIR = "models"
 
-with open(f"./{MODEL_DIR}/info.json") as f:
-    models = json.load(f)
-
 LIMIT_CHARS = 700
 
 for speaker in list(speaker_config.items()):
@@ -97,7 +94,7 @@ def delete_temp_files(file0, file1):
 
 @app.route("/api/info/", methods=["GET"])
 def info():
-    res = {'version': '0.0.1a', 'model': models}
+    res = {'version': '0.0.1a', 'model': speaker_config}
     return res
 
 
@@ -107,7 +104,8 @@ def fetch_speakers():
     for speaker in list(speaker_config.items()):
         speakers.append({
             "name": speaker[1]["speaker"],
-            "id": speaker[1]["speaker_id"]
+            "id": speaker[1]["speaker_id"],
+            "info": speaker[1]["info"]
         })
     return jsonify(speakers)
 

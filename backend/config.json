@@ -1,9 +1,18 @@
 {
-    "korla" : {
-        "speaker" : "Korla Baier",
-        "speaker_id" : "korla",
-        "model" : "best_model_korla.pth",
-        "config" : "config_korla.json",
-        "effects" : "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23"
-    }
+  "korla": {
+    "speaker": "Korla Baier (glow tts)",
+    "speaker_id": "korlaglowtts",
+    "model": "best_model_korla.pth",
+    "config": "config_korla.json",
+    "effects": "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23",
+    "info": "sady: 2400"
+  },
+  "korlanowe": {
+    "speaker": "Korla Baier (tactotron)",
+    "speaker_id": "korlatactotron",
+    "model": "best_model_245943.pth",
+    "config": "config.json",
+    "effects": "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23",
+    "info": "sady: 2400"
+  }
 }
