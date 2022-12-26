@@ -2,9 +2,9 @@
 
 swobodny serbski TTS-system
 
-##instalacija
+## instalacija
 
-###docker
+### docker
 Za instalaciju trjeba so poprawom jenož docker a node.js, node.js trjebaće jenož hdyž chceće frontend wužiwać.
 
 Hdyž šće sej waše modele a konfiguracije dele ćahnyli, połožiće tute to rjadowaka backend/models (rjadowak models dyrbiće sami činić).
@@ -22,11 +22,11 @@ startujće container
 docker run -p 8080:8080 bamborak
 ```
 
-##extension
+## extension
 
 Nawigěrujeće k chrome://extensions/.
 Potom aktiwěrujeće "Entwicklermodus" (horeka naprawo).
 Horeka nalěwo stwóčiće jenož hišće horeka nalěwo na "Entpackte Erweiterung laden".
 
-##kontatk
+## kontatk
 Jeli maće hišće prašenje, problemy abo chceće mi něšto druheho prajić. Pisaće mi rady mailku: bamborak@gaussia.de.
