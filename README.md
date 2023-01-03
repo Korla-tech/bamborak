@@ -31,6 +31,7 @@ docker run -p 8080:8080 bamborak
 Nawigěrujeće k chrome://extensions/.
 Potom aktiwěrujeće "Entwicklermodus" (horjeka naprawo).
 Horjeka nalěwo stłóčiće jenož hišće horjeka nalěwo na "Entpackte Erweiterung laden".
+Nětkole wuzwolće rjadowak "extension".
 
 ## kontakt
 Jeli maće hišće prašenje, problemy abo chceće mi něšto druheho prajić. Pisaće mi rady mailku: bamborak@gaussia.de.
