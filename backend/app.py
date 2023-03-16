@@ -35,6 +35,9 @@ MODEL_DIR = "models"
 LIMIT_CHARS = 700
 
 for speaker in list(speaker_config.items()):
+    print(f"speaker_key: {speaker[0]}")
+    print(f"tts_checkpoint={MODEL_DIR}/{speaker[1]['model']}")
+    print(f"tts_config_path={MODEL_DIR}/{speaker[1]['config']}")
     synthesizers[speaker[0]] = Synthesizer(
         tts_checkpoint=f"{MODEL_DIR}/{speaker[1]['model']}",
         tts_config_path=f"{MODEL_DIR}/{speaker[1]['config']}",
@@ -94,7 +97,7 @@ def delete_temp_files(file0, file1):
 
 @app.route("/api/info/", methods=["GET"])
 def info():
-    res = {'version': '0.0.1a', 'model': speaker_config}
+    res = {'version': '0.0.1b', 'model': speaker_config}
     return res
 
 
@@ -124,9 +127,13 @@ def main():
         if request.json["speaker_id"] not in speaker_config:
             return err_msg("invalid speaker_id")
 
+        speaker_id=request.json["speaker_id"]
         text = request.json["text"]
 
+        print(f"\n\nspeaker_id: {speaker_id}")
+        print(f"using model: {synthesizers[speaker_id].tts_checkpoint}")
         print(f"input text: {text}")
+
 
         if LIMIT_CHARS > 0 and len(text) > LIMIT_CHARS:
             return err_msg(f"input text too long (max {LIMIT_CHARS} characters)")
@@ -186,13 +193,12 @@ def main():
         res_text = res_text.lower()
         res_text = res_text.replace("  ", " ")
         print(f"Final text: {res_text}")
-        wav = synthesizers[request.json["speaker_id"]].tts(res_text)
+        wav = synthesizers[speaker_id].tts(res_text)
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
-        synthesizers[request.json["speaker_id"]
-                     ].save_wav(wav, temp_wav_file_path)
+        synthesizers[speaker_id].save_wav(wav, temp_wav_file_path)
         os.system(
-            f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}")
+            f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[speaker_id]['effects']}' {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
         delete_temp_file_thread.start()
