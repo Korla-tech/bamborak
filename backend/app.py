@@ -5,6 +5,8 @@ from flask_cors import CORS
 
 import os
 
+import subprocess
+
 import json
 
 from TTS.utils.synthesizer import Synthesizer
@@ -90,14 +92,18 @@ def is_number(s):
 
 
 def delete_temp_files(file0, file1):
-    time.sleep(1)
-    os.system(f"rm {file0}")
-    os.system(f"rm {file1}")
+    time.sleep(10)
+#   exec(f"ls -l temp")
+    exec(f"rm {file0}")
+    exec(f"rm {file1}")
+    print(f"deleted {file0} {file1}")
 
+def exec(cmd):
+    subprocess.run(cmd, shell=True, check=True)
 
 @app.route("/api/info/", methods=["GET"])
 def info():
-    res = {'version': '0.0.1b', 'model': speaker_config}
+    res = {'version': '0.0.1c', 'model': speaker_config}
     return res
 
 
@@ -197,8 +203,9 @@ def main():
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
         synthesizers[speaker_id].save_wav(wav, temp_wav_file_path)
-        os.system(
-            f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[speaker_id]['effects']}' {temp_mp3_file_path}")
+        ffcmd = f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[speaker_id]['effects']}' {temp_mp3_file_path}"
+        exec(ffcmd)
+        print("called: "+ffcmd)
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
         delete_temp_file_thread.start()
