@@ -92,14 +92,15 @@ def is_number(s):
 
 
 def delete_temp_files(file0, file1):
-    time.sleep(10)
+    time.sleep(120) # 120 Sekunden warten, bis dahin sollte das Datei versendet worden sein ....
 #   exec(f"ls -l temp")
     exec(f"rm {file0}")
     exec(f"rm {file1}")
-    print(f"deleted {file0} {file1}")
 
 def exec(cmd):
+    print(f">>> exec {cmd}")
     subprocess.run(cmd, shell=True, check=True)
+    print(f"<<< exec")
 
 @app.route("/api/info/", methods=["GET"])
 def info():
@@ -205,7 +206,7 @@ def main():
         synthesizers[speaker_id].save_wav(wav, temp_wav_file_path)
         ffcmd = f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[speaker_id]['effects']}' {temp_mp3_file_path}"
         exec(ffcmd)
-        print("called: "+ffcmd)
+        exec(f"ls -l {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
         delete_temp_file_thread.start()
