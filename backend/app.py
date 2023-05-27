@@ -5,6 +5,8 @@ from flask_cors import CORS
 
 import os
 
+import subprocess
+
 import json
 
 from TTS.utils.synthesizer import Synthesizer
@@ -97,14 +99,22 @@ def is_number(s):
 
 
 def delete_temp_files(file0, file1):
-    time.sleep(1)
-    os.system(f"rm {file0}")
-    os.system(f"rm {file1}")
+    # 120 Sekunden warten, bis dahin sollte das Datei versendet worden sein ....
+    time.sleep(120)
+#   exec(f"ls -l temp")
+    exec(f"rm {file0}")
+    exec(f"rm {file1}")
+
+
+def exec(cmd):
+    print(f">>> exec {cmd}")
+    subprocess.run(cmd, shell=True, check=True)
+    print(f"<<< exec")
 
 
 @app.route("/api/info/", methods=["GET"])
 def info():
-    res = {'version': '0.0.1a', 'model': speaker_config}
+    res = {'version': '0.0.1c', 'model': speaker_config}
     return res
 
 
@@ -134,8 +144,11 @@ def main():
         if request.json["speaker_id"] not in speaker_config:
             return err_msg("invalid speaker_id")
 
+        speaker_id = request.json["speaker_id"]
         text = request.json["text"]
 
+        print(f"\n\nspeaker_id: {speaker_id}")
+        print(f"using model: {synthesizers[speaker_id].tts_checkpoint}")
         print(f"input text: {text}")
 
         if LIMIT_CHARS > 0 and len(text) > LIMIT_CHARS:
@@ -197,14 +210,13 @@ def main():
         res_text = res_text.replace("  ", " ")
         res_text = res_text.replace("\xad", "-")
         print(f"Final text: {res_text}")
-        wav = synthesizers[request.json["speaker_id"]].tts(res_text)
+        wav = synthesizers[speaker_id].tts(res_text)
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
         synthesizers[request.json["speaker_id"]
                      ].save_wav(wav, temp_wav_file_path)
-        subprocess.Popen(
-            [f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}"], stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, shell=True).wait()
+        os.system(
+            f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
         delete_temp_file_thread.start()

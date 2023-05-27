@@ -17,12 +17,12 @@
     "effects": "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23",
     "info": "sady: 2400\n steps:75k"
   },
-  "korlavits": {
-    "speaker": "Korla (vits)",
-    "speaker_id": "korlavits",
-    "model": "checkpoint_80000.pth",
-    "config": "config_vits.json",
+  "korlanowe": {
+    "speaker": "Korla Baier (tactotron)",
+    "speaker_id": "korlatactotron",
+    "model": "best_model_245943.pth",
+    "config": "config.json",
     "effects": "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23",
-    "info": "sady: 2400\n steps:75k"
+    "info": "sady: 2400"
   }
 }
