@@ -17,6 +17,8 @@ import time
 
 from utils import number_to_text
 
+import subprocess
+
 app = flask.Flask(__name__)
 
 # CORS
@@ -35,10 +37,18 @@ MODEL_DIR = "models"
 LIMIT_CHARS = 700
 
 for speaker in list(speaker_config.items()):
-    synthesizers[speaker[0]] = Synthesizer(
-        tts_checkpoint=f"{MODEL_DIR}/{speaker[1]['model']}",
-        tts_config_path=f"{MODEL_DIR}/{speaker[1]['config']}",
-    )
+    try:
+        synthesizers[speaker[0]] = Synthesizer(
+            tts_checkpoint=f"{MODEL_DIR}/{speaker[1]['model']}",
+            tts_config_path=f"{MODEL_DIR}/{speaker[1]['config']}",
+            vocoder_checkpoint=f"{MODEL_DIR}/{speaker[1]['vocoder']}",
+            vocoder_config=f"{MODEL_DIR}/{speaker[1]['vocoder_config']}"
+        )
+    except KeyError:
+        synthesizers[speaker[0]] = Synthesizer(
+            tts_checkpoint=f"{MODEL_DIR}/{speaker[1]['model']}",
+            tts_config_path=f"{MODEL_DIR}/{speaker[1]['config']}",
+        )
 
 char_to_spoken = {
     "a": "a",
@@ -144,26 +154,26 @@ def main():
         for index in range(len(text)):
 
             char = text[index]
-            #print(f".. {index} {char}")
+            # print(f".. {index} {char}")
             if char.isupper():
                 if abbr_start is None:
                     abbr_start = index
                     curstate = "abbr"
-                    #print(f"starting abbreviation at {index}")
+                    # print(f"starting abbreviation at {index}")
             elif is_number(char):
                 if num_start is None:
                     num_start = index
                     curstate = "num"
-                    #print(f"starting number at {index}")
+                    # print(f"starting number at {index}")
             else:
                 curstate = "char"
-            #print(f"{laststate} -> {curstate}")
+            # print(f"{laststate} -> {curstate}")
 
             if curstate != laststate:
                 if laststate == "abbr":
                     written_abbr = ""
                     abbr = text[abbr_start:index]
-                    #print(f"found abbreviation {abbr}")
+                    # print(f"found abbreviation {abbr}")
                     if len(abbr) > 1:
                         for letter in abbr:
                             written_abbr = f"{written_abbr} {char_to_spoken[letter.lower()]}"
@@ -173,26 +183,28 @@ def main():
                     abbr_start = None
                 elif laststate == "num":
                     num = text[num_start:index]
-                    #print(f"found number {num}")
+                    # print(f"found number {num}")
                     res_text = res_text + ' '+number_to_text(num)+' '
                     num_start = None
 
             if curstate == "char":
                 res_text = res_text + char
-            #print(f"res_text: {res_text}")
+            # print(f"res_text: {res_text}")
 
             laststate = curstate
 
         res_text = res_text.lower()
         res_text = res_text.replace("  ", " ")
+        res_text = res_text.replace("\xad", "-")
         print(f"Final text: {res_text}")
         wav = synthesizers[request.json["speaker_id"]].tts(res_text)
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
         synthesizers[request.json["speaker_id"]
                      ].save_wav(wav, temp_wav_file_path)
-        os.system(
-            f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}")
+        subprocess.Popen(
+            [f"ffmpeg -i {temp_wav_file_path} -af '{speaker_config[request.json['speaker_id']]['effects']}' {temp_mp3_file_path}"], stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, shell=True).wait()
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path))
         delete_temp_file_thread.start()
