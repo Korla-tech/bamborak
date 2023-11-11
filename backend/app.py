@@ -99,7 +99,7 @@ def exec(cmd):
 
 @app.route("/api/info/", methods=["GET"])
 def info():
-    res = {"version": "0.0.1c", "model": speaker_config}
+    res = {"version": "0.0.2", "model": speaker_config}
     return res
 
 
@@ -224,7 +224,7 @@ def main():
             synthesizers[speaker_id]["tts"].tts_to_file(
                 text=text, file_path=temp_wav_file_path
             )
-        os.system(f"sox {temp_wav_file_path} {temp_mp3_file_path}")
+        exec(f"sox {temp_wav_file_path} {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path)
         )
