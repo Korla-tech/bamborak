@@ -12,7 +12,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  CssBaseline,
   IconButton,
   Modal,
   ModalClose,
@@ -61,7 +60,7 @@ function App() {
     }
     if (text.length > max_textlen) {
       setOpen(true);
-      setError("Zapodaj tekst z <= "+max_textlen+" znamješkami!");
+      setError("Zapodaj tekst z <= " + max_textlen + " znamješkami!");
       return;
     }
     setIsLoading(true);
@@ -74,7 +73,15 @@ function App() {
     let interval = setInterval(() => {
       elapsed_time++;
       setProgress((elapsed_time / estimated_time) * 100);
-      console.log("el.time vs. est.time: " + elapsed_time + " / "+estimated_time +" = "+ ((elapsed_time / estimated_time) * 100)+"%");
+      console.log(
+        "el.time vs. est.time: " +
+          elapsed_time +
+          " / " +
+          estimated_time +
+          " = " +
+          (elapsed_time / estimated_time) * 100 +
+          "%"
+      );
     }, 1000);
     fetch(`${url}/api/tts/`, {
       method: "POST",
@@ -87,17 +94,18 @@ function App() {
       }),
     }).then((response) => {
       response.blob().then((blob) => {
-        console.log("result blob ("+blob.type+"): ");
+        console.log("result blob (" + blob.type + "): ");
         console.log(blob);
         clearInterval(interval);
         setIsLoading(false);
-        if (blob.type == "application/json") { // Dann ist es ein Fehlerobject .....
+        if (blob.type == "application/json") {
+          // Dann ist es ein Fehlerobject .....
           var myReader = new FileReader();
           myReader.onload = function (event) {
             setOpen(true);
             //setError(JSON.stringify(myReader.result));
-            setError(""+myReader.result);
-            console.log("error: "+myReader.result);
+            setError("" + myReader.result);
+            console.log("error: " + myReader.result);
           };
           myReader.readAsText(blob);
         } else {
@@ -241,7 +249,6 @@ function App() {
             }}
           >
             <Button
-              title="pause/continue"
               onClick={() => {
                 setIsPlaying(!isPlaying);
                 if (isPlaying) {
@@ -254,7 +261,6 @@ function App() {
               {isPlaying ? <Pause /> : <PlayArrow />}
             </Button>
             <Button
-              title="replay"
               onClick={() => {
                 audio.current.currentTime = 0;
                 audio.current.play();
@@ -264,7 +270,6 @@ function App() {
               <ReplayOutlined />
             </Button>
             <Button
-              title="download"
               onClick={() => {
                 var a = document.createElement("a");
                 document.body.appendChild(a);

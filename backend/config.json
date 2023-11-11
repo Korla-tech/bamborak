@@ -1,28 +1,18 @@
 {
-  "korlaglowttsunivnet": {
-    "speaker": "Korla (glow tts + Univnet)",
-    "speaker_id": "korlaglowttsunivnet",
-    "model": "best_model_korla.pth",
-    "config": "config_korla.json",
-    "effects": "equalizer=f=60:width_type=q:width=1.1:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=-3,equalizer=f=6000:width_type=q:width=1.1:g=-24,loudnorm=I=-23",
-    "info": "sady: 2400\n steps glowtts: 75k\nsteps univnet: 130k",
-    "vocoder": "checkpoint_130000.pth",
-    "vocoder_config": "config.json"
+  "korlavits": {
+    "speaker": "Korla Baier (vits)",
+    "speaker_id": "korlavits",
+    "model": "checkpoint_80000.pth",
+    "config": "config_vits.json",
+    "info": "sady: 2400",
+    "multi_speaker": false
   },
-  "korlaglowtts": {
-    "speaker": "Korla (glow tts)",
-    "speaker_id": "korlaglowtts",
-    "model": "best_model_korla.pth",
-    "config": "config_korla.json",
-    "effects": "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23",
-    "info": "sady: 2400\n steps:75k"
-  },
-  "korlanowe": {
-    "speaker": "Korla Baier (tactotron)",
-    "speaker_id": "korlatactotron",
-    "model": "best_model_245943.pth",
-    "config": "config.json",
-    "effects": "equalizer=f=20:width_type=q:width=0.3:g=-24,equalizer=f=530:width_type=q:width=0.71:g=-2.7,equalizer=f=1530:width_type=q:width=3.2:g=-24,equalizer=f=3440:width_type=q:width=0.71:g=3.4,equalizer=f=11000:width_type=q:width=0.71:g=-23.1,loudnorm=I=-23",
-    "info": "sady: 2400"
+  "tts_v1": {
+    "speaker": "TTS v1",
+    "speaker_id": "tts_v1",
+    "model": "checkpoint_830000.pth",
+    "config": "config(1).json",
+    "info": "wultki TTS model z wjele rěčnikami",
+    "multi_speaker": true
   }
 }

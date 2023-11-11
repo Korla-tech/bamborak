@@ -14,6 +14,6 @@ RUN chmod u+x start.sh
 
 RUN apt update -y
 RUN apt-get install libsndfile1 -y
-RUN apt install ffmpeg -y
+RUN apt install sox -y
 
 CMD ["./start.sh"]
