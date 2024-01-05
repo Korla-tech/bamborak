@@ -8,6 +8,7 @@ RUN pip install TTS
 
 RUN mkdir temp
 
+
 COPY ./ /usr/app/src/
 EXPOSE 8080
 RUN chmod u+x start.sh
@@ -17,4 +18,4 @@ RUN apt-get install libsndfile1 -y
 RUN apt install sox -y
 RUN apt install libsox-fmt-all -y
 
-CMD ["./start.sh"]
+CMD ["./start.sh", "logs"]

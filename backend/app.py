@@ -1,10 +1,13 @@
+use_tts = True
+
 import flask
 from flask import request, jsonify, send_file
 from flask_cors import CORS
 import os
 import subprocess
 import json
-from TTS.api import TTS
+if use_tts:
+    from TTS.api import TTS
 import uuid
 import threading
 import time
@@ -12,13 +15,37 @@ from utils import number_to_text
 import subprocess
 import random
 
-app = flask.Flask(__name__)
 
-# CORS
-CORS(app)
+import logging
+import sys
+from logging.handlers import RotatingFileHandler
 
-with open("./config.json") as f:
-    speaker_config = json.load(f)
+logger = None
+
+def init_logging(logdir):
+    global logger
+    # create logger
+    logger = logging.getLogger('log_bamborak')
+
+    # set logging level
+    logger.setLevel(logging.DEBUG)
+
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setLevel(logging.DEBUG)
+    stream_handler.setFormatter(formatter)
+    # create rotating file handler and set level to debug
+
+    rot_handler = RotatingFileHandler(logdir+'/bamborak.log', maxBytes=20000000, backupCount=10)
+    rot_handler.setLevel(logging.DEBUG)
+    rot_handler.setFormatter(formatter)
+
+    logger.addHandler(stream_handler)
+    logger.addHandler(rot_handler)
+
+    logger.debug('logging initialized')
 
 
 synthesizers = {}
@@ -27,15 +54,38 @@ MODEL_DIR = "models"
 
 LIMIT_CHARS = 10_000
 
-for speaker in list(speaker_config.items()):
-    synthesizers[speaker[0]] = {
-        "tts": TTS(
-            model_path=f"models/{speaker[1]['model']}",
-            config_path=f"models/{speaker[1]['config']}",
-        )
-    }
-    if speaker[1]["multi_speaker"]:
-        synthesizers[speaker[0]]["speakers"] = synthesizers[speaker[0]]["tts"].speakers
+app = None
+speaker_config = {}
+synthesizers = {}
+
+
+app = flask.Flask(__name__)
+
+# CORS
+def init_app():
+    CORS(app)
+
+
+def init_config():
+    global speaker_config
+    with open("./config.json") as f:
+        speaker_config = json.load(f)
+        logger.debug("speaker_config "+str(speaker_config))
+
+
+def init_synthesiszers():
+    for speaker in list(speaker_config.items()):
+        if use_tts:
+            synthesizers[speaker[0]] = {
+                "tts": TTS(
+                    model_path=f"models/{speaker[1]['model']}",
+                    config_path=f"models/{speaker[1]['config']}",
+                )
+            }
+            if speaker[1]["multi_speaker"]:
+                synthesizers[speaker[0]]["speakers"] = synthesizers[speaker[0]]["tts"].speakers
+
+
 
 char_to_spoken = {
     "a": "a",
@@ -74,7 +124,6 @@ char_to_spoken = {
     " ": "",
 }
 
-
 def is_number(s):
     try:
         int(s)
@@ -92,19 +141,21 @@ def delete_temp_files(file0, file1):
 
 
 def exec(cmd):
-    print(f">>> exec {cmd}")
+    logger.debug(f">>> exec {cmd}")
     subprocess.run(cmd, shell=True, check=True)
-    print(f"<<< exec")
+    logger.debug(f"<<< exec")
 
 
 @app.route("/api/info/", methods=["GET"])
 def info():
-    res = {"version": "0.0.2", "model": speaker_config}
+    logger.debug(str(request))
+    res = {"version": "0.0.3", "model": speaker_config}
     return res
 
 
 @app.route("/api/fetch_speakers/", methods=["GET"])
 def fetch_speakers():
+    logger.debug(str(request))
     speakers = []
     for speaker in list(speaker_config.items()):
         try:
@@ -128,11 +179,15 @@ def fetch_speakers():
 
 
 def err_msg(msg):
+    logger.debug("errmsg "+str(msg))
     return {"errmsg": msg}
 
 
 @app.route("/api/tts/", methods=["POST"])
 def main():
+    logger.debug(str(request))
+    logger.debug("request json payload: "+str(request.json))
+    
     try:
         if "text" not in request.json:
             return err_msg("missing text")
@@ -251,10 +306,25 @@ def main():
                 "trace": trace,
             },
         }
-        print(str(ret))
+        logger.debug("Exception: "+str(ret))
         return ret
 
 
 if __name__ == "__main__":
-    print("starting webserver ...")
+
+    logdir = '.'
+    if len(sys.argv) == 2:
+        logdir = sys.argv[1]
+    elif len(sys.argv)  > 2:
+        print ("invalid arguments: "+str(sys.argv))
+        exit(1)
+
+    print ("logdir is " + logdir)
+
+    init_logging(logdir)
+    init_config()
+    init_synthesiszers()
+
+    logger.debug("starting webserver ...")
     app.run(port=int(os.environ.get("PORT", 8080)), host="0.0.0.0", debug=False)
+    logger.debug("exiting ...")
