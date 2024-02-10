@@ -1,18 +1,10 @@
 {
-  "korlavits": {
-    "speaker": "Korla Baier (vits)",
-    "speaker_id": "korlavits",
-    "model": "checkpoint_80000.pth",
-    "config": "config_vits.json",
-    "info": "sady: 2400",
-    "multi_speaker": false
-  },
-  "tts_v1": {
-    "speaker": "TTS v1",
-    "speaker_id": "tts_v1",
-    "model": "checkpoint_830000.pth",
-    "config": "config(1).json",
-    "info": "wultki TTS model z wjele rěčnikami",
+  "tts_v2": {
+    "speaker": "TTS v2",
+    "speaker_id": "tts_v2",
+    "model": "checkpoint_330000.pth",
+    "config": "config.json",
+    "info": "TTS model je so z někak 20 hodźinami datow trenował.",
     "multi_speaker": true
   }
 }

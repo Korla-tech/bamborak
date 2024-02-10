@@ -1,4 +1,5 @@
 backend/models/
 backend/temp/
+backend/bamborak.log
 .DS_Store
 __pycache__/

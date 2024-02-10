@@ -6,6 +6,7 @@ from flask_cors import CORS
 import os
 import subprocess
 import json
+
 if use_tts:
     from TTS.api import TTS
 import uuid
@@ -22,30 +23,35 @@ from logging.handlers import RotatingFileHandler
 
 logger = None
 
+
 def init_logging(logdir):
     global logger
     # create logger
-    logger = logging.getLogger('log_bamborak')
+    logger = logging.getLogger("log_bamborak")
 
     # set logging level
     logger.setLevel(logging.DEBUG)
 
     # create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     stream_handler = logging.StreamHandler(stream=sys.stdout)
     stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(formatter)
     # create rotating file handler and set level to debug
 
-    rot_handler = RotatingFileHandler(logdir+'/bamborak.log', maxBytes=20000000, backupCount=10)
+    rot_handler = RotatingFileHandler(
+        logdir + "/bamborak.log", maxBytes=20000000, backupCount=10
+    )
     rot_handler.setLevel(logging.DEBUG)
     rot_handler.setFormatter(formatter)
 
     logger.addHandler(stream_handler)
     logger.addHandler(rot_handler)
 
-    logger.debug('logging initialized')
+    logger.debug("logging initialized")
 
 
 synthesizers = {}
@@ -61,6 +67,7 @@ synthesizers = {}
 
 app = flask.Flask(__name__)
 
+
 # CORS
 def init_app():
     CORS(app)
@@ -68,9 +75,13 @@ def init_app():
 
 def init_config():
     global speaker_config
+    global names
     with open("./config.json") as f:
         speaker_config = json.load(f)
-        logger.debug("speaker_config "+str(speaker_config))
+        logger.debug("speaker_config " + str(speaker_config))
+    with open("./names.json") as f:
+        names = json.load(f)
+        logger.debug("names " + str(names))
 
 
 def init_synthesiszers():
@@ -83,8 +94,9 @@ def init_synthesiszers():
                 )
             }
             if speaker[1]["multi_speaker"]:
-                synthesizers[speaker[0]]["speakers"] = synthesizers[speaker[0]]["tts"].speakers
-
+                synthesizers[speaker[0]]["speakers"] = synthesizers[speaker[0]][
+                    "tts"
+                ].speakers
 
 
 char_to_spoken = {
@@ -124,6 +136,7 @@ char_to_spoken = {
     " ": "",
 }
 
+
 def is_number(s):
     try:
         int(s)
@@ -158,16 +171,26 @@ def fetch_speakers():
     logger.debug(str(request))
     speakers = []
     for speaker in list(speaker_config.items()):
-        try:
+        if speaker[1]["multi_speaker"]:
             for idx, sub_speaker in enumerate(synthesizers[speaker[0]]["speakers"]):
-                speakers.append(
-                    {
-                        "name": f"{speaker[1]['speaker']} {idx}",
-                        "id": f"{speaker[1]['speaker_id']}/{sub_speaker}",
-                        "info": speaker[1]["info"],
-                    }
-                )
-        except:
+                if speaker[0] in names:
+                    if str(idx) in names[speaker[0]]:
+                        speakers.append(
+                            {
+                                "name": f"{names[speaker[0]][str(idx)]}",
+                                "id": f"{speaker[1]['speaker_id']}/{sub_speaker}",
+                                "info": speaker[1]["info"],
+                            }
+                        )
+                else:
+                    speakers.append(
+                        {
+                            "name": f"{speaker[1]['speaker']} {idx}",
+                            "id": f"{speaker[1]['speaker_id']}/{sub_speaker}",
+                            "info": speaker[1]["info"],
+                        }
+                    )
+        else:
             speakers.append(
                 {
                     "name": speaker[1]["speaker"],
@@ -175,19 +198,20 @@ def fetch_speakers():
                     "info": speaker[1]["info"],
                 }
             )
+    print(speakers)
     return jsonify(speakers)
 
 
 def err_msg(msg):
-    logger.debug("errmsg "+str(msg))
+    logger.debug("errmsg " + str(msg))
     return {"errmsg": msg}
 
 
 @app.route("/api/tts/", methods=["POST"])
 def main():
     logger.debug(str(request))
-    logger.debug("request json payload: "+str(request.json))
-    
+    logger.debug("request json payload: " + str(request.json))
+
     try:
         if "text" not in request.json:
             return err_msg("missing text")
@@ -211,7 +235,7 @@ def main():
         if LIMIT_CHARS > 0 and len(text) > LIMIT_CHARS:
             return err_msg(f"input text too long (max {LIMIT_CHARS} characters)")
 
-        if text[-1] == "." or text[-1] == "," or text[-1] == "!":
+        if text[-1] == "." or text[-1] == "," or text[-1] == "!" or text[-1] == "?":
             pass
         else:
             text = f"{text}."
@@ -267,17 +291,18 @@ def main():
         res_text = res_text.lower()
         res_text = res_text.replace("  ", " ")
         res_text = res_text.replace("\xad", "-")
+        res_text = res_text.replace("x", "ks")
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
         if multi_speaker:
             synthesizers[speaker_id]["tts"].tts_to_file(
-                text=text,
+                text=res_text,
                 file_path=temp_wav_file_path,
                 speaker=sub_speaker,
             )
         else:
             synthesizers[speaker_id]["tts"].tts_to_file(
-                text=text, file_path=temp_wav_file_path
+                text=res_text, file_path=temp_wav_file_path
             )
         exec(f"sox {temp_wav_file_path} {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
@@ -306,23 +331,23 @@ def main():
                 "trace": trace,
             },
         }
-        logger.debug("Exception: "+str(ret))
+        logger.debug("Exception: " + str(ret))
         return ret
 
 
 if __name__ == "__main__":
-
-    logdir = '.'
+    logdir = "."
     if len(sys.argv) == 2:
         logdir = sys.argv[1]
-    elif len(sys.argv)  > 2:
-        print ("invalid arguments: "+str(sys.argv))
+    elif len(sys.argv) > 2:
+        print("invalid arguments: " + str(sys.argv))
         exit(1)
 
-    print ("logdir is " + logdir)
+    print("logdir is " + logdir)
 
     init_logging(logdir)
     init_config()
+    init_app()
     init_synthesiszers()
 
     logger.debug("starting webserver ...")
