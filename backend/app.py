@@ -56,7 +56,7 @@ def init_logging(logdir):
 
 synthesizers = {}
 
-MODEL_DIR = "models"
+MODEL_DIR = "tts_models/multilingual/multi-dataset"
 
 LIMIT_CHARS = 10_000
 
@@ -87,16 +87,22 @@ def init_config():
 def init_synthesiszers():
     for speaker in list(speaker_config.items()):
         if use_tts:
+            cur_model_path=f"{MODEL_DIR}/{speaker[1]['model']}"
+            cur_config_path=f"{MODEL_DIR}/{speaker[1]['config']}"
+            logger.debug("init_synthesiszers: "+str(speaker[0])+" config_path: "+cur_config_path+" model_path: "+cur_model_path)
+            logger.debug("init_synthesiszers ...: "+str(speaker[1]))
             synthesizers[speaker[0]] = {
                 "tts": TTS(
-                    model_path=f"models/{speaker[1]['model']}",
-                    config_path=f"models/{speaker[1]['config']}",
+                    model_path=cur_model_path,
+                    config_path=cur_config_path,
                 )
             }
             if speaker[1]["multi_speaker"]:
                 synthesizers[speaker[0]]["speakers"] = synthesizers[speaker[0]][
                     "tts"
                 ].speakers
+
+            # synthesizers[speaker[0]]["tts"].is_multi_lingual = False
 
 
 char_to_spoken = {
@@ -162,7 +168,7 @@ def exec(cmd):
 @app.route("/api/info/", methods=["GET"])
 def info():
     logger.debug(str(request))
-    res = {"version": "0.0.3", "model": speaker_config}
+    res = {"version": "0.0.4", "model": speaker_config}
     return res
 
 
@@ -294,16 +300,20 @@ def main():
         res_text = res_text.replace("x", "ks")
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
+        logger.debug(">> calling synthesizer for '"+str(res_text)+"'")
+        cur_tts = synthesizers[speaker_id]["tts"]
+        logger.debug("tts: "+str(list(cur_tts.__dict__.keys())));
         if multi_speaker:
-            synthesizers[speaker_id]["tts"].tts_to_file(
+            cur_tts.tts_to_file(
                 text=res_text,
                 file_path=temp_wav_file_path,
                 speaker=sub_speaker,
             )
         else:
-            synthesizers[speaker_id]["tts"].tts_to_file(
+            cur_tts.tts_to_file(
                 text=res_text, file_path=temp_wav_file_path
             )
+        logger.debug("<< synthesizer called!")
         exec(f"sox {temp_wav_file_path} {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
             target=delete_temp_files, args=(temp_mp3_file_path, temp_wav_file_path)
