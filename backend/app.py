@@ -56,7 +56,7 @@ def init_logging(logdir):
 
 synthesizers = {}
 
-MODEL_DIR = "tts_models/multilingual/multi-dataset"
+MODEL_DIR = "tts_models"
 
 LIMIT_CHARS = 10_000
 

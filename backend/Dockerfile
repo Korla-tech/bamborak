@@ -19,4 +19,8 @@ RUN apt-get install libsndfile1 -y
 RUN apt install sox -y
 RUN apt install libsox-fmt-all -y
 
+# q&d for a problem in the TTS package
+COPY site-packages-TTS/api.py /usr/local/lib/python3.10/site-packages/TTS/api.py
+
+
 CMD ["./start.sh", "logs"]
