@@ -56,7 +56,7 @@ def init_logging(logdir):
 
 synthesizers = {}
 
-MODEL_DIR = "tts_models/multilingual/multi-dataset"
+MODEL_DIR = "tts_models"
 
 LIMIT_CHARS = 10_000
 
@@ -87,10 +87,17 @@ def init_config():
 def init_synthesiszers():
     for speaker in list(speaker_config.items()):
         if use_tts:
-            cur_model_path=f"{MODEL_DIR}/{speaker[1]['model']}"
-            cur_config_path=f"{MODEL_DIR}/{speaker[1]['config']}"
-            logger.debug("init_synthesiszers: "+str(speaker[0])+" config_path: "+cur_config_path+" model_path: "+cur_model_path)
-            logger.debug("init_synthesiszers ...: "+str(speaker[1]))
+            cur_model_path = f"{MODEL_DIR}/{speaker[1]['model']}"
+            cur_config_path = f"{MODEL_DIR}/{speaker[1]['config']}"
+            logger.debug(
+                "init_synthesiszers: "
+                + str(speaker[0])
+                + " config_path: "
+                + cur_config_path
+                + " model_path: "
+                + cur_model_path
+            )
+            logger.debug("init_synthesiszers ...: " + str(speaker[1]))
             synthesizers[speaker[0]] = {
                 "tts": TTS(
                     model_path=cur_model_path,
@@ -107,14 +114,14 @@ def init_synthesiszers():
 
 char_to_spoken = {
     "a": "a",
-    "b": "be",
-    "c": "ce",
-    "će": "će",
+    "b": "bej",
+    "c": "cej",
+    "će": "ćej",
     "č": "čet",
-    "d": "de",
+    "d": "dej",
     "e": "e",
     "f": "ef",
-    "g": "ge",
+    "g": "gej",
     "h": "ha",
     "i": "i",
     "j": "jot",
@@ -126,12 +133,12 @@ char_to_spoken = {
     "ń": "ejn",
     "o": "o",
     "ó": "ót",
-    "p": "pe",
+    "p": "pej",
     "r": "er",
     "ř": "eř",
     "s": "es",
     "š": "eš",
-    "t": "te",
+    "t": "tej",
     "u": "u",
     "w": "w",
     "v": "fau",
@@ -204,7 +211,6 @@ def fetch_speakers():
                     "info": speaker[1]["info"],
                 }
             )
-    print(speakers)
     return jsonify(speakers)
 
 
@@ -294,15 +300,16 @@ def main():
 
             laststate = curstate
 
-        res_text = res_text.lower()
+        if speaker_config[speaker_id]["lower"]:
+            res_text = res_text.lower()
         res_text = res_text.replace("  ", " ")
-        res_text = res_text.replace("\xad", "-")
+        res_text = res_text.replace("\xad", "")
         res_text = res_text.replace("x", "ks")
         temp_wav_file_path = f"temp/{uuid.uuid4().hex}.wav"
         temp_mp3_file_path = f"temp/{uuid.uuid4().hex}.mp3"
-        logger.debug(">> calling synthesizer for '"+str(res_text)+"'")
+        logger.debug(">> calling synthesizer for '" + str(res_text) + "'")
         cur_tts = synthesizers[speaker_id]["tts"]
-        logger.debug("tts: "+str(list(cur_tts.__dict__.keys())));
+        logger.debug("tts: " + str(list(cur_tts.__dict__.keys())))
         if multi_speaker:
             cur_tts.tts_to_file(
                 text=res_text,
@@ -310,9 +317,7 @@ def main():
                 speaker=sub_speaker,
             )
         else:
-            cur_tts.tts_to_file(
-                text=res_text, file_path=temp_wav_file_path
-            )
+            cur_tts.tts_to_file(text=res_text, file_path=temp_wav_file_path)
         logger.debug("<< synthesizer called!")
         exec(f"sox {temp_wav_file_path} {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(

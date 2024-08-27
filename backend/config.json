@@ -1,10 +1,20 @@
 {
-  "tts_v2": {
-    "speaker": "TTS v2",
-    "speaker_id": "tts_v2",
-    "model": "checkpoint_330000.pth",
-    "config": "config.json",
-    "info": "TTS model je so z někak 20 hodźinami datow trenował.",
-    "multi_speaker": true
-  }
+    "korla": {
+        "speaker": "Korla",
+        "speaker_id": "korla",
+        "model": "korla.pth",
+        "config": "korla.json",
+        "multi_speaker": false,
+        "lower": false,
+        "info": "test"
+    },
+    "weronika": {
+        "speaker": "Weronika",
+        "speaker_id": "weronika",
+        "model": "weronika.pth",
+        "config": "weronika.json",
+        "multi_speaker": false,
+        "lower": false,
+        "info": "test"
+    }
 }
