@@ -14,8 +14,7 @@ RUN pip install -U pip
 RUN pip install flask
 RUN pip install flask-cors
 RUN pip install setuptools_rust
-RUN git clone https://github.com/coqui-ai/TTS
-RUN pip install -e TTS/
+RUN pip install TTS==0.20.6
 
 RUN mkdir temp
 RUN mkdir logs

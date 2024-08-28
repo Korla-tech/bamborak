@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 app.py $1
+python app.py $1

@@ -1,13 +1,4 @@
 {
-    "korla": {
-        "speaker": "Korla",
-        "speaker_id": "korla",
-        "model": "korla.pth",
-        "config": "korla.json",
-        "multi_speaker": false,
-        "lower": false,
-        "info": "test"
-    },
     "weronika": {
         "speaker": "Weronika",
         "speaker_id": "weronika",
