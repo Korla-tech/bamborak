@@ -51,21 +51,18 @@ numberWord100To900 = {
 
 numberWord1000plus = {
     1e3: "tysac",
-
     1e6: "jedyn milion",  # milion maskulinum
     2e6: "dwaj milionaj",
     3e6: "tři miliony",
     4e6: "štyri miliony",
     5e6: "pjeć milionow",
     "6e6+": "milionow",
-
     1e9: "jedna miliarda",  # miliarda femininum
     2e9: "dwě miliardźe",
     3e9: "tři miliardy",
     4e9: "štyri miliardy",
     5e9: "pjeć miliardow",
     "6e9+": "miliardow",
-
     1e12: "jedyn bilion",  # bilion maskulinum
     2e12: "dwaj bilionaj",
     3e12: "tři biliony",
@@ -203,6 +200,18 @@ def spellNumberBil(num):
     if num2 > 0:
         texts.append(spellNumberMrd(num2))
     return " ".join(texts)
+
+
+def year_to_text(num):
+    num = int(num)
+    if num > 1099 and num < 2000:
+        num1 = math.floor(num / 100)
+        num1_txt = spellNumber0to99(num1)
+        num2 = num % 100
+        num2_txt = spellNumber0to99(num2)
+        return f"{num1_txt} stow {num2_txt}"
+    else:
+        return number_to_text(num)
 
 
 def number_to_text(num):

@@ -12,9 +12,10 @@ if use_tts:
 import uuid
 import threading
 import time
-from utils import number_to_text
+from utils import number_to_text, year_to_text
 import subprocess
 import random
+import re
 
 
 import logging
@@ -242,7 +243,7 @@ def main():
             if speaker_id not in speaker_config:
                 return err_msg("invalid speaker_id")
 
-        text = request.json["text"]
+        text = request.json["text"].strip()
 
         if LIMIT_CHARS > 0 and len(text) > LIMIT_CHARS:
             return err_msg(f"input text too long (max {LIMIT_CHARS} characters)")
@@ -251,6 +252,19 @@ def main():
             pass
         else:
             text = f"{text}."
+
+        for match in re.findall(r"\b\d{4}-\d{2,4}\b", text):
+            first_num, sec_num = match.split("-")
+            first_num_txt = year_to_text(first_num)
+            sec_num_txt = year_to_text(sec_num)
+            text = text.replace(match, f"{first_num_txt} do {sec_num_txt}")
+
+        for match in re.findall(r"\d{1,2}:\d{2}\s*hodź", text):
+            first_num, sec_num = match.split(":")
+            sec_num = "".join(char for char in sec_num if char.isdigit())
+            first_num_txt = number_to_text(first_num)
+            sec_num_txt = number_to_text(sec_num)
+            text = text.replace(match, f"{first_num_txt} hodźin {sec_num_txt}")
 
         abbr_start = None
         num_start = None
@@ -317,7 +331,14 @@ def main():
                 speaker=sub_speaker,
             )
         else:
-            cur_tts.tts_to_file(text=res_text, file_path=temp_wav_file_path)
+            try:
+                cur_tts.tts_to_file(text=res_text, file_path=temp_wav_file_path)
+            except ValueError:
+                cur_tts.tts_to_file(
+                    text=res_text,
+                    file_path=temp_wav_file_path,
+                    speaker=random.choice(cur_tts.speakers),
+                )
         logger.debug("<< synthesizer called!")
         exec(f"sox {temp_wav_file_path} {temp_mp3_file_path}")
         delete_temp_file_thread = threading.Thread(
