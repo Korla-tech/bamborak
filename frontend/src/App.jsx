@@ -202,7 +202,9 @@ function App() {
               }}
             />
             <Typography level="h5">Informacije k modelej</Typography>
-            <Typography>{infoText}</Typography>
+            <Typography>
+              <article dangerouslySetInnerHTML={{ __html: infoText }} />
+            </Typography>
           </ModalDialog>
         </Modal>
         <Textarea

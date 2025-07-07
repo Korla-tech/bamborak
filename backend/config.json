@@ -7,5 +7,14 @@
     "multi_speaker": false,
     "lower": false,
     "info": "Staw 28.08.2024"
+  },
+  "korla": {
+    "speaker": "Korla",
+    "speaker_id": "korla",
+    "model": "korla.pth",
+    "config": "korla.json",
+    "multi_speaker": false,
+    "lower": false,
+    "info": "Staw 28.08.2024 <a href='https://hf.co/Korla/tts-modele'>https://hf.co/Korla/tts-modele</a>"
   }
 }
