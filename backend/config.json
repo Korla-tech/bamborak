@@ -16,5 +16,23 @@
     "multi_speaker": false,
     "lower": false,
     "info": "Staw 28.08.2024 <a href='https://hf.co/Korla/tts-modele'>https://hf.co/Korla/tts-modele</a>"
+  },
+  "katka": {
+    "speaker": "Katka",
+    "speaker_id": "katka",
+    "model": "katka_small.pth",
+    "config": "katka.json",
+    "multi_speaker": false,
+    "lower": false,
+    "info": "Staw 25.03.2025 <a href='https://hf.co/Katka/tts-modele'>https://hf.co/Katka/tts-modele</a>"
+  },
+  "juro": {
+    "speaker": "Juro",
+    "speaker_id": "juro",
+    "model": "juro_small.pth",
+    "config": "juro.json",
+    "multi_speaker": false,
+    "lower": false,
+    "info": "Staw 25.03.2025 <a href='https://hf.co/Juro/tts-modele'>https://hf.co/Juro/tts-modele</a>"
   }
 }

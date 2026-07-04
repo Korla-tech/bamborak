@@ -1,4 +1,5 @@
 import math
+import re
 
 numberWord0To9 = {
     0: "nul",
@@ -70,6 +71,156 @@ numberWord1000plus = {
     5e12: "pjeć bilionow",
     "6e12+": "bilionow",
 }
+
+
+char_to_spoken = {
+    "a": "a",
+    "b": "bej",
+    "c": "cej",
+    "će": "ćej",
+    "č": "čet",
+    "d": "dej",
+    "e": "e",
+    "f": "ef",
+    "g": "gej",
+    "h": "ha",
+    "i": "i",
+    "j": "jot",
+    "k": "ka",
+    "l": "el",
+    "ł": "eł",
+    "m": "em",
+    "n": "en",
+    "ń": "ejn",
+    "o": "o",
+    "ó": "ót",
+    "p": "pej",
+    "r": "er",
+    "ř": "eř",
+    "s": "es",
+    "š": "eš",
+    "t": "tej",
+    "u": "u",
+    "w": "w",
+    "v": "fau",
+    "x": "iks",
+    "y": "ypsilon",
+    "z": "zet",
+    "ž": "žet",
+    " ": "",
+}
+
+
+SENTENCE_SPLIT_RE = re.compile(r"[^.!?]+[.!?]?", re.UNICODE)
+
+
+def split_into_sentences(text):
+    text = str(text).strip()
+    if text == "":
+        return []
+
+    sentences = [segment.strip() for segment in SENTENCE_SPLIT_RE.findall(text)]
+    return [segment for segment in sentences if segment]
+
+
+def _is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
+def _normalize_terminal_punctuation(text):
+    if text == "":
+        return text
+    if text[-1] in ".,!?":
+        return text
+    return f"{text}."
+
+
+def _replace_year_ranges(text):
+    for match in re.findall(r"\b\d{4}-\d{2,4}\b", text):
+        first_num, sec_num = match.split("-")
+        first_num_txt = year_to_text(first_num)
+        sec_num_txt = year_to_text(sec_num)
+        text = text.replace(match, f"{first_num_txt} do {sec_num_txt}")
+    return text
+
+
+def _replace_time_notation(text):
+    for match in re.findall(r"\d{1,2}:\d{2}\s*hodź(?:\.|in)?", text):
+        first_num, sec_num = match.split(":")
+        sec_num = "".join(char for char in sec_num if char.isdigit())
+        first_num_txt = number_to_text(first_num)
+        sec_num_txt = number_to_text(sec_num) if sec_num != "00" else ""
+        text = text.replace(match, f"{first_num_txt} hodźin {sec_num_txt}")
+    return text
+
+
+def _expand_abbreviations_and_numbers(text):
+    abbr_start = None
+    num_start = None
+    res_text = ""
+    curstate = "char"
+    laststate = ""
+
+    for index in range(len(text)):
+        char = text[index]
+        if char.isupper():
+            if abbr_start is None:
+                abbr_start = index
+                curstate = "abbr"
+        elif _is_number(char):
+            if num_start is None:
+                num_start = index
+                curstate = "num"
+        else:
+            curstate = "char"
+
+        if curstate != laststate:
+            if laststate == "abbr":
+                written_abbr = ""
+                abbr = text[abbr_start:index]
+                if len(abbr) > 1:
+                    for letter in abbr:
+                        written_abbr = (
+                            f"{written_abbr} {char_to_spoken.get(letter.lower(), letter.lower())}"
+                        )
+                    res_text = res_text + " " + written_abbr + " "
+                else:
+                    res_text = res_text + abbr
+                abbr_start = None
+            elif laststate == "num":
+                num = text[num_start:index]
+                res_text = res_text + " " + number_to_text(num) + " "
+                num_start = None
+
+        if curstate == "char":
+            res_text = res_text + char
+
+        laststate = curstate
+
+    return res_text
+
+
+def preprocess_text(text, lower=False):
+    text = str(text).strip()
+    if text == "":
+        return text
+
+    text = _normalize_terminal_punctuation(text)
+    text = _replace_year_ranges(text)
+    text = _replace_time_notation(text)
+    text = _expand_abbreviations_and_numbers(text)
+
+    if lower:
+        text = text.lower()
+
+    text = text.replace("  ", " ")
+    text = text.replace("\xad", "")
+    text = text.replace("x", "ks")
+    return text
 
 
 def spellNumber0to99(num):

@@ -43,11 +43,41 @@ function App() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoText, setInfoText] = useState("");
 
-  const audio = useRef();
-
   const audio_blob = useRef();
+  const audioCtxRef = useRef(null);
+  const decodedBuffersRef = useRef([]);
 
-  const synthesize = () => {
+  const stopAudio = () => {
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+    decodedBuffersRef.current = [];
+  };
+
+  const scheduleBuffers = (ctx, buffers, startTime) => {
+    let t = startTime;
+    for (const buf of buffers) {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(t);
+      t += buf.duration;
+    }
+    return t;
+  };
+
+  const readJsonError = async (response) => {
+    const body = await response.text();
+    try {
+      const parsed = JSON.parse(body);
+      return parsed.errmsg || body;
+    } catch (error) {
+      return body;
+    }
+  };
+
+  const synthesize = async () => {
     if (ID === "") {
       setOpen(true);
       setError("Dyrbiš sebi rěčnika wuzwolić!");
@@ -63,61 +93,103 @@ function App() {
       setError("Zapodaj tekst z <= " + max_textlen + " znamješkami!");
       return;
     }
+
+    stopAudio();
     setIsLoading(true);
+    setIsLoaded(false);
+    setIsPlaying(false);
     setProgress(0);
     setOpen(false);
-    setEstimatedTime(((text.length / 11) * realtime_factor).toFixed());
-    let estimated_time = ((text.length / 11) * realtime_factor).toFixed();
-    console.log("est.time: " + estimatedTime);
+    setEstimatedTime(((text.length / 11) / realtime_factor).toFixed());
+
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    decodedBuffersRef.current = [];
+
+    let estimated_time = ((text.length / 11) / realtime_factor).toFixed();
     let elapsed_time = 0;
     let interval = setInterval(() => {
       elapsed_time++;
       setProgress((elapsed_time / estimated_time) * 100);
-      console.log(
-        "el.time vs. est.time: " +
-          elapsed_time +
-          " / " +
-          estimated_time +
-          " = " +
-          (elapsed_time / estimated_time) * 100 +
-          "%"
-      );
     }, 1000);
-    fetch(`${url}/api/tts/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: text,
-        speaker_id: ID,
-      }),
-    }).then((response) => {
-      response.blob().then((blob) => {
-        console.log("result blob (" + blob.type + "): ");
-        console.log(blob);
-        clearInterval(interval);
-        setIsLoading(false);
-        if (blob.type == "application/json") {
-          // Dann ist es ein Fehlerobject .....
-          var myReader = new FileReader();
-          myReader.onload = function (event) {
-            setOpen(true);
-            //setError(JSON.stringify(myReader.result));
-            setError("" + myReader.result);
-            console.log("error: " + myReader.result);
-          };
-          myReader.readAsText(blob);
-        } else {
-          audio_blob.current = blob;
-          let blobUrl = URL.createObjectURL(blob);
-          audio.current = new Audio(blobUrl);
-          audio.current.play();
-          setIsLoaded(true);
-          setIsPlaying(true);
-        }
+
+    let isFirstChunk = true;
+    let nextTime = 0;
+    const allChunks = [];
+
+    try {
+      const response = await fetch(`${url}/api/tts_stream/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: text,
+          speaker_id: ID,
+        }),
       });
-    });
+
+      if (!response.ok) {
+        const errText = await readJsonError(response);
+        setOpen(true);
+        setError("" + errText);
+        return;
+      }
+
+      if (!response.body) {
+        throw new Error("Streaming body not available");
+      }
+
+      const streamReader = response.body.getReader();
+
+      while (true) {
+        const { value, done } = await streamReader.read();
+        if (done) break;
+
+        allChunks.push(value);
+
+        try {
+          const copy = value.buffer.slice(
+            value.byteOffset,
+            value.byteOffset + value.byteLength
+          );
+          const audioBuffer = await ctx.decodeAudioData(copy);
+          decodedBuffersRef.current.push(audioBuffer);
+
+          if (isFirstChunk) {
+            isFirstChunk = false;
+            nextTime = ctx.currentTime + 0.1;
+            clearInterval(interval);
+            setIsLoading(false);
+            setIsLoaded(true);
+            setIsPlaying(true);
+          }
+
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+          source.start(nextTime);
+          nextTime += audioBuffer.duration;
+        } catch (decodeErr) {
+          console.warn("Audio chunk decode failed:", decodeErr);
+        }
+      }
+
+      if (allChunks.length > 0) {
+        audio_blob.current = new Blob(allChunks, { type: "audio/mpeg" });
+      }
+      setProgress(100);
+
+      const msRemaining = Math.max(0, nextTime - ctx.currentTime) * 1000;
+      setTimeout(() => setIsPlaying(false), msRemaining);
+    } catch (error) {
+      console.error(error);
+      setOpen(true);
+      setError("Synteza njeje so poradźiła.");
+    } finally {
+      clearInterval(interval);
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -128,6 +200,10 @@ function App() {
         setSpeakers(data);
       })
     );
+
+    return () => {
+      stopAudio();
+    };
   }, []);
 
   return (
@@ -252,11 +328,13 @@ function App() {
           >
             <Button
               onClick={() => {
-                setIsPlaying(!isPlaying);
+                if (!audioCtxRef.current) return;
                 if (isPlaying) {
-                  audio.current.pause();
+                  audioCtxRef.current.suspend();
+                  setIsPlaying(false);
                 } else {
-                  audio.current.play();
+                  audioCtxRef.current.resume();
+                  setIsPlaying(true);
                 }
               }}
             >
@@ -264,9 +342,18 @@ function App() {
             </Button>
             <Button
               onClick={() => {
-                audio.current.currentTime = 0;
-                audio.current.play();
+                if (decodedBuffersRef.current.length === 0) return;
+                if (audioCtxRef.current) audioCtxRef.current.close();
+                const ctx = new AudioContext();
+                audioCtxRef.current = ctx;
+                const endTime = scheduleBuffers(
+                  ctx,
+                  decodedBuffersRef.current,
+                  ctx.currentTime + 0.1
+                );
                 setIsPlaying(true);
+                const ms = Math.max(0, endTime - ctx.currentTime) * 1000;
+                setTimeout(() => setIsPlaying(false), ms);
               }}
             >
               <ReplayOutlined />

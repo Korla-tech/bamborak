@@ -3,3 +3,4 @@ backend/temp/
 backend/bamborak.log
 .DS_Store
 __pycache__/
+test
