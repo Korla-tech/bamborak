@@ -6,7 +6,7 @@ $logging = false;
 
 if (!$logging) {
     $webserver = "vmd70556.contaboserver.net";
-    $port      = 8080;
+    $port      = 8081;
 } else {
     $webserver = "localhost";
     $port      = 8080;
